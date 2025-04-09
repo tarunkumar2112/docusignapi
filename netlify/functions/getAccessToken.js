@@ -1,4 +1,3 @@
-// netlify/functions/getAccessToken.js
 require('dotenv').config();
 const docusign = require('docusign-esign');
 const { DS_CLIENT_ID, DS_PRIVATE_KEY, DS_REDIRECT_URI } = process.env;
@@ -13,25 +12,28 @@ exports.handler = async (event) => {
     };
   }
 
-  const apiClient = new docusign.ApiClient();
-  apiClient.setBasePath('https://demo.docusign.net/restapi');
-
   try {
-    const tokenApi = new docusign.OAuthApi(apiClient);
-    const tokenResponse = await tokenApi.getOAuthToken({
-      clientId: DS_CLIENT_ID,
-      clientSecret: DS_PRIVATE_KEY,
-      code: code,
-      redirectUri: DS_REDIRECT_URI,
-    });
+    const apiClient = new docusign.ApiClient();
+    apiClient.setBasePath('https://demo.docusign.net/restapi');
 
-    const accessToken = tokenResponse.access_token;
-    const accountId = tokenResponse.accounts[0].account_id;
+    // This is the CORRECT way to exchange the code using JWT
+    const tokenResponse = await apiClient.generateAccessToken(
+      DS_CLIENT_ID,
+      DS_PRIVATE_KEY.replace(/\\n/g, '\n'), // Just in case it's stored with escaped newlines
+      'signature',
+      3600
+    );
+
+    const accessToken = tokenResponse.accessToken;
+
+    // Optionally get user info
+    const userInfo = await apiClient.getUserInfo(accessToken);
+    const accountId = userInfo.accounts[0].accountId;
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: 'Token retrieved!',
+        message: 'Access token retrieved!',
         accessToken,
         accountId,
       }),
