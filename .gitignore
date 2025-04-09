@@ -1,6 +1,34 @@
-# Local Netlify folder
-.netlify
+# Node modules
+node_modules/
 
+# Environment files
 .env
 
-node_modules
+# Netlify build folder
+.netlify/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+
+# Dependency directory
+*.tgz
+
+# IDE and editor folders
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Next.js build output (if using Next.js)
+.next/
+
+# Logs
+*.log
