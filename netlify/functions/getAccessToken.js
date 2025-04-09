@@ -1,6 +1,6 @@
 require('dotenv').config();
 const docusign = require('docusign-esign');
-const { DS_CLIENT_ID, DS_PRIVATE_KEY, DS_REDIRECT_URI } = process.env;
+const { DS_CLIENT_ID, DS_CLIENT_SECRET, DS_REDIRECT_URI } = process.env;
 
 exports.handler = async (event) => {
   const { code } = event.queryStringParameters;
@@ -14,31 +14,35 @@ exports.handler = async (event) => {
 
   try {
     const apiClient = new docusign.ApiClient();
-    apiClient.setBasePath('https://demo.docusign.net/restapi');
+    apiClient.setOAuthBasePath('account-d.docusign.com'); // Important for OAuth
 
-    // This is the CORRECT way to exchange the code using JWT
-    const tokenResponse = await apiClient.generateAccessToken(
+    const results = await apiClient.requestAccessToken(
       DS_CLIENT_ID,
-      DS_PRIVATE_KEY.replace(/\\n/g, '\n'), // Just in case it's stored with escaped newlines
-      'signature',
-      3600
+      DS_CLIENT_SECRET,
+      'authorization_code',
+      code,
+      DS_REDIRECT_URI
     );
 
-    const accessToken = tokenResponse.accessToken;
+    const accessToken = results.access_token;
 
-    // Optionally get user info
+    // Get user info to fetch accountId
     const userInfo = await apiClient.getUserInfo(accessToken);
     const accountId = userInfo.accounts[0].accountId;
+
+    console.log('Access Token:', accessToken);
+    console.log('Account ID:', accountId);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: 'Access token retrieved!',
+        message: 'Access token received!',
         accessToken,
         accountId,
       }),
     };
   } catch (err) {
+    console.error('Error:', err);
     return {
       statusCode: 500,
       body: JSON.stringify({

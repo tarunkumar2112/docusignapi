@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DocuSign Envelope Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    table {
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <h1>📄 DocuSign Envelope Dashboard</h1>
+
+  <table id="envelopes" class="display">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Status</th>
+        <th>Sender</th>
+        <th>Last Updated</th>
+        <th>Envelope ID</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <!-- Fetch and Render Data -->
+  <script>
+    fetch('http://localhost:8888/.netlify/functions/fetch')
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.querySelector('#envelopes tbody');
+  
+        data.forEach(item => {
+          const subject = item.emailSubject || '—';
+          const status = item.status || '—';
+          const sender = item.sender?.userName || '—';
+          const updated = item.statusChangedDateTime
+            ? new Date(item.statusChangedDateTime).toLocaleString()
+            : '—';
+          const envelopeId = item.envelopeId || '—';
+  
+          const row = `
+            <tr>
+              <td>${subject}</td>
+              <td>${status}</td>
+              <td>${sender}</td>
+              <td>${updated}</td>
+              <td>${envelopeId}</td>
+            </tr>
+          `;
+          tbody.insertAdjacentHTML('beforeend', row);
+        });
+  
+        $('#envelopes').DataTable(); // initialize DataTables
+      })
+      .catch(err => {
+        document.body.innerHTML += `<p style="color:red;">Failed to load data: ${err.message}</p>`;
+      });
+  </script>
+  
+</body>
+</html>
