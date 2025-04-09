@@ -10,17 +10,7 @@ exports.handler = async (event, context) => {
   apiClient.setBasePath('https://demo.docusign.net/restapi'); // Use sandbox base path for testing
 
   try {
-    if (!code) {
-      // If no code is provided, return an error
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: 'Authorization code is missing!',
-        }),
-      };
-    }
-
-    // Step 2: Exchange the authorization code for an access token
+    // Step 2: Authorization code received, exchange it for an access token
     const tokenApi = new docusign.OAuthApi(apiClient);
     const tokenResponse = await tokenApi.getOAuthToken({
       clientId: DS_CLIENT_ID,
@@ -46,7 +36,7 @@ exports.handler = async (event, context) => {
       }),
     };
   } catch (error) {
-    // Handle any errors that occur during the OAuth process
+    // Handle errors
     return {
       statusCode: 500,
       body: JSON.stringify({
