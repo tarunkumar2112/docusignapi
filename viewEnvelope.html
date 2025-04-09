@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>View Envelope</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .field {
+      margin-bottom: 1rem;
+    }
+    .field label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Envelope Details</h1>
+    <div id="envelopeDetails">
+      <p>Loading...</p>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const envelopeId = urlParams.get('id');
+
+    if (!envelopeId) {
+      document.getElementById('envelopeDetails').innerHTML = 'Envelope ID is required.';
+    } else {
+      fetch(`https://docusignapi.netlify.app/.netlify/functions/viewEnvelope?id=${envelopeId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.envelopeId) {
+            const envelopeDetails = `
+              <div class="field">
+                <label>Envelope ID:</label>
+                <p>${data.envelopeId}</p>
+              </div>
+              <div class="field">
+                <label>Subject:</label>
+                <p>${data.emailSubject || '—'}</p>
+              </div>
+              <div class="field">
+                <label>Status:</label>
+                <p>${data.status || '—'}</p>
+              </div>
+              <div class="field">
+                <label>Sender:</label>
+                <p>${data.sender?.userName || '—'}</p>
+              </div>
+              <div class="field">
+                <label>Created:</label>
+                <p>${new Date(data.createdDateTime).toLocaleString()}</p>
+              </div>
+            `;
+            document.getElementById('envelopeDetails').innerHTML = envelopeDetails;
+          } else {
+            document.getElementById('envelopeDetails').innerHTML = 'Envelope not found.';
+          }
+        })
+        .catch(err => {
+          document.getElementById('envelopeDetails').innerHTML = `Failed to load envelope: ${err.message}`;
+        });
+    }
+  </script>
+</body>
+</html>
