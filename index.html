@@ -44,7 +44,7 @@
 
   <!-- Fetch and Render Data -->
   <script>
-    fetch('http://localhost:8888/.netlify/functions/fetch')
+    fetch('https://docusignapi.netlify.app/.netlify/functions/fetch')
       .then(res => res.json())
       .then(data => {
         const tbody = document.querySelector('#envelopes tbody');

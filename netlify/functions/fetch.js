@@ -8,6 +8,7 @@ exports.handler = async function (event, context) {
     const userId = process.env.DS_USER_ID; // GUID format
     const authServer = 'account-d.docusign.com';
     const privateKey = process.env.DS_PRIVATE_KEY.replace(/\\n/g, '\n');
+    console.log('Private Key:', privateKey);
 
     const dsApi = new docusign.ApiClient();
     dsApi.setOAuthBasePath(authServer);
