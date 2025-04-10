@@ -72,6 +72,8 @@
             <th>Envelope ID</th>
             <th>View</th>
             <th>Recipient</th>
+            <th>Logs</th>
+
           </tr>
         </thead>
         <tbody></tbody>
@@ -99,8 +101,9 @@
           // Count status
           statusCounts[status] = (statusCounts[status] || 0) + 1;
 
-          const viewLink = `<a href="/viewEnvelope.html?id=${envelopeId}" class="btn btn-sm btn-primary" target="_blank">View</a>`;
-          const recipientLink = `<a href="/recipients.html?id=${envelopeId}" class="btn btn-sm btn-secondary" target="_blank">Recipient Info</a>`;
+          const viewLink = `<a href="/viewEnvelope.html?id=${envelopeId}" class="btn btn-sm btn-primary">View</a>`;
+          const recipientLink = `<a href="/recipients.html?id=${envelopeId}" class="btn btn-sm btn-secondary">Recipient Info</a>`;
+          const auditlink = `<a href="/audit.html?id=${envelopeId}" class="btn btn-sm btn-secondary">Audit Logs</a>`;
 
           const row = `
             <tr>
@@ -111,6 +114,7 @@
               <td>${envelopeId}</td>
               <td>${viewLink}</td>
               <td>${recipientLink}</td>
+               <td>${auditlink}</td>
             </tr>
           `;
           tbody.insertAdjacentHTML('beforeend', row);
