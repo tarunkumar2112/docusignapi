@@ -1,0 +1,76 @@
+<!-- recipients.html?id=abc123 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Envelope Recipients</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background-color: #f4f4f4;
+    }
+    h2 {
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>👥 Envelope Recipients</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Signed At</th>
+      </tr>
+    </thead>
+    <tbody id="recipient-table-body">
+      <!-- Dynamic rows will be inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const envelopeId = urlParams.get('id');
+
+    fetch(`https://docusignapi.netlify.app/.netlify/functions/getRecipients?id=${envelopeId}`)
+      .then(res => res.json())
+      .then(data => {
+        const recipients = data.signers || [];
+        const tbody = document.getElementById('recipient-table-body');
+
+        if (recipients.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No recipients found.</td></tr>';
+        } else {
+          recipients.forEach(rec => {
+            const row = `
+              <tr>
+                <td>${rec.name}</td>
+                <td>${rec.email}</td>
+                <td>${rec.roleName || '-'}</td>
+                <td>${rec.status}</td>
+                <td>${rec.signedDateTime ? new Date(rec.signedDateTime).toLocaleString() : '-'}</td>
+              </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', row);
+          });
+        }
+      })
+      .catch(err => {
+        document.body.innerHTML += `<p style="color:red;">Error: ${err.message}</p>`;
+      });
+  </script>
+</body>
+</html>

@@ -34,6 +34,7 @@
         <th>Last Updated</th>
         <th>Envelope ID</th>
         <th>View</th>
+        <th>Recipient</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -61,7 +62,8 @@
 
           // Create a link to view envelope details
           const viewLink = `<a href="/viewEnvelope.html?id=${envelopeId}" target="_blank">View</a>`;
-  
+          const recipentlink = `<a href="/recipients.html?id=${envelopeId}" target="_blank">Recipient Info</a>`;
+
           const row = `
             <tr>
               <td>${subject}</td>
@@ -70,6 +72,8 @@
               <td>${updated}</td>
               <td>${envelopeId}</td>
               <td>${viewLink}</td>
+              <td>${recipentlink}</td>
+
             </tr>
           `;
           tbody.insertAdjacentHTML('beforeend', row);
