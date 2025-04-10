@@ -3,37 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>View Envelope</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 2rem;
-      background: #f9f9f9;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-    .field {
-      margin-bottom: 1rem;
-    }
-    .field label {
-      font-weight: bold;
-    }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div class="container">
-    <h1>Envelope Details</h1>
-    <div id="envelopeDetails">
-      <p>Loading...</p>
+<body class="bg-gray-100 font-sans">
+
+  <div class="container mx-auto max-w-4xl p-6">
+    <h1 class="text-center text-3xl font-semibold mb-8">Envelope Details</h1>
+    
+    <div id="envelopeDetails" class="bg-white p-6 rounded-lg shadow-md">
+      <p class="text-center text-gray-500">Loading...</p>
     </div>
   </div>
 
@@ -42,41 +20,57 @@
     const envelopeId = urlParams.get('id');
 
     if (!envelopeId) {
-      document.getElementById('envelopeDetails').innerHTML = 'Envelope ID is required.';
+      document.getElementById('envelopeDetails').innerHTML = '<p class="text-red-600">Envelope ID is required.</p>';
     } else {
       fetch(`https://docusignapi.netlify.app/.netlify/functions/viewEnvelope?id=${envelopeId}`)
         .then(res => res.json())
         .then(data => {
           if (data.envelopeId) {
+            let statusClass = 'bg-yellow-400'; // default class (draft)
+            if (data.status === 'Completed') statusClass = 'bg-green-500';
+            else if (data.status === 'Sent') statusClass = 'bg-blue-400';
+            else if (data.status === 'Error') statusClass = 'bg-red-500';
+
             const envelopeDetails = `
-              <div class="field">
-                <label>Envelope ID:</label>
-                <p>${data.envelopeId}</p>
+              <div class="mb-4">
+                <label class="block font-medium text-gray-700">Envelope ID:</label>
+                <p class="text-gray-900">${data.envelopeId}</p>
               </div>
-              <div class="field">
-                <label>Subject:</label>
-                <p>${data.emailSubject || '—'}</p>
+              <div class="mb-4">
+                <label class="block font-medium text-gray-700">Subject:</label>
+                <p class="text-gray-900">${data.emailSubject || '—'}</p>
               </div>
-              <div class="field">
-                <label>Status:</label>
-                <p>${data.status || '—'}</p>
+              <div class="mb-4">
+                <label class="block font-medium text-gray-700">Status:</label>
+                <div class="inline-block text-white text-center px-4 py-2 rounded-full ${statusClass}">
+                  ${data.status || '—'}
+                </div>
               </div>
-              <div class="field">
-                <label>Sender:</label>
-                <p>${data.sender?.userName || '—'}</p>
+              <div class="mb-4">
+                <label class="block font-medium text-gray-700">Sender:</label>
+                <p class="text-gray-900">${data.sender?.userName || '—'}</p>
               </div>
-              <div class="field">
-                <label>Created:</label>
-                <p>${new Date(data.createdDateTime).toLocaleString()}</p>
+              <div class="mb-4">
+                <label class="block font-medium text-gray-700">Created:</label>
+                <p class="text-gray-900">${new Date(data.createdDateTime).toLocaleString()}</p>
+              </div>
+              <div class="mb-4">
+                <label class="block font-medium text-gray-700">Last Status Change:</label>
+                <p class="text-gray-900">${new Date(data.statusChangedDateTime).toLocaleString() || '—'}</p>
+              </div>
+              <div class="mt-4">
+                <a href="/audit.html?id=${data.envelopeId}" class="inline-block px-4 py-2 mr-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">View Audit Logs</a>
+                <a href="/recipients.html?id=${data.envelopeId}" class="inline-block px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">View Recipients</a>
               </div>
             `;
+
             document.getElementById('envelopeDetails').innerHTML = envelopeDetails;
           } else {
-            document.getElementById('envelopeDetails').innerHTML = 'Envelope not found.';
+            document.getElementById('envelopeDetails').innerHTML = '<p class="text-red-600">Envelope not found.</p>';
           }
         })
         .catch(err => {
-          document.getElementById('envelopeDetails').innerHTML = `Failed to load envelope: ${err.message}`;
+          document.getElementById('envelopeDetails').innerHTML = `<p class="text-red-600">Failed to load envelope: ${err.message}</p>`;
         });
     }
   </script>
