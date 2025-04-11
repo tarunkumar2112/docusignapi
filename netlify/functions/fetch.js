@@ -28,7 +28,7 @@ exports.handler = async function (event, context) {
     const userInfo = await dsApi.getUserInfo(accessToken);
     const accountId = userInfo.accounts[0].accountId;
     const basePath = userInfo.accounts[0].baseUri + '/restapi';
-
+    console.log(accountId);
     // Configure API Client
     dsApi.setBasePath(basePath);
     dsApi.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
