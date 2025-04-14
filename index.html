@@ -198,7 +198,18 @@ color: #fff !important;
 
         Promise.all(fetchPromises).then(() => {
           initializeCharts(statusCounts);
-          $('#envelopes').DataTable();
+          $('#envelopes').DataTable({
+  autoWidth: false,
+  columnDefs: [
+    { targets: 0, width: '35%' }, // KPC Envelope - give it more space
+    { targets: 1, width: '10%' }, // Status
+    { targets: 2, width: '15%' }, // Updated
+    { targets: 3, width: '20%' }, // Next Signer
+    { targets: 4, width: '5%' },  // View - tighten
+    { targets: 5, width: '10%' }   // Logs - tighten
+  ]
+});
+
           updateStatusGrid(statusCounts);
           document.getElementById('skeleton').style.display = 'none';
           const dash = document.getElementById('dashboard');
