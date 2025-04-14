@@ -19,13 +19,35 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    h1, h2, h3, .font-bold, .font-semibold {
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+    }
+    .btn-orange {
+      background-color: #f47c3c;
+      color: white;
+    }
+    .bluebtn{
+      background-color: #1e4882;
+      color: white;
+    }
+    .dataTables_wrapper .dataTables_filter input,
+    .dataTables_wrapper .dataTables_length select {
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-800 p-6">
 
   <!-- Title -->
   <div class="text-center mb-10">
-    <h1 class="text-4xl font-bold text-indigo-700">Sonora Wealth KPC Onboarding Status</h1>
-    <p class="text-gray-500 mt-2 text-lg">Powered by KPCx</p>
+    <h1 class="text-4xl font-bold" style="color: #1e4882;">Sonora Wealth KPC Onboarding Status</h1>
+    <p class="mt-2 text-lg" style="color: #6d85a7;">Powered by KPCx</p>
   </div>
 
   <!-- Skeleton Placeholder -->
@@ -38,10 +60,10 @@
     <div class="h-64 bg-gray-200 rounded-lg mt-6"></div>
   </div>
 
-  <!-- Actual Dashboard -->
+  <!-- Dashboard -->
   <div id="dashboard" class="hidden">
 
-    <!-- Charts & Stats Grid -->
+    <!-- Charts -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
       <div class="bg-white rounded-lg shadow-md p-4">
         <canvas id="statusPieChart"></canvas>
@@ -50,14 +72,14 @@
         <canvas id="statusBarChart"></canvas>
       </div>
       <div class="bg-white rounded-lg shadow-md p-4">
-        <h2 class="text-xl font-semibold mb-4 text-center">Envelope Status Summary</h2>
+        <h2 class="text-xl font-semibold mb-4 text-center" style="color: #1e4882;">Envelope Status Summary</h2>
         <div id="statusGrid" class="grid grid-cols-2 gap-4 text-center text-sm md:text-base"></div>
       </div>
     </div>
 
-    <!-- Data Table -->
+    <!-- Table -->
     <div class="bg-white p-5 rounded-lg shadow-md">
-      <table id="envelopes" class="table table-striped table-bordered w-100">
+      <table id="envelopes" class="table table-bordered w-100 bg-white">
         <thead>
           <tr>
             <th>KPC Envelope</th>
@@ -73,7 +95,6 @@
     </div>
   </div>
 
-  <!-- Script -->
   <script>
     fetch('https://docusignapi.netlify.app/.netlify/functions/fetch')
       .then(res => res.json())
@@ -84,32 +105,26 @@
         data.forEach(item => {
           const subject = item.emailSubject || '—';
           const status = item.status || '—';
-          const updated = item.statusChangedDateTime
-            ? new Date(item.statusChangedDateTime).toLocaleString()
-            : '—';
+          const updated = item.statusChangedDateTime ? new Date(item.statusChangedDateTime).toLocaleString() : '—';
           const envelopeId = item.envelopeId || '—';
           const nextSigner = item.recipients?.signers?.find(s => s.status !== "completed")?.name || '—';
 
-          // Count status
           statusCounts[status] = (statusCounts[status] || 0) + 1;
 
-          // Status badge
           const badgeColors = {
-  completed: 'bg-green-100 text-green-800',
-  status: 'bg-orange-100 text-orange-800',
-  'In Progress': 'bg-yellow-100 text-yellow-800',
-  deleted: 'bg-red-100 text-red-800',
-  voided: 'bg-gray-200 text-gray-800',
-};
+            completed: 'bg-green-100 text-[#5cb85c]',
+            'In Progress': 'bg-yellow-100 text-[#f0ad4e]',
+            voided: 'bg-gray-100 text-[#6e6e6e]',
+            deleted: 'bg-red-100 text-[#d9534f]',
+            status: 'bg-orange-100 text-[#f47c3c]'
+          };
 
-const badgeClass = badgeColors[status] || 'bg-gray-100 text-gray-700';
+          const badgeClass = badgeColors[status] || 'bg-gray-200 text-gray-700';
+          const statusBadge = `<span class="px-2 py-1 rounded-full text-sm font-semibold ${badgeClass}">${status}</span>`;
+          const viewLink = `<a href="/viewEnvelope.html?id=${envelopeId}" class="btn btn-sm bluebtn">View</a>`;
+          const auditlink = `<a href="/audit.html?id=${envelopeId}" class="btn btn-sm btn-orange">Audit Logs</a>`;
 
-const statusBadge = `<span class="px-2 py-1 rounded-full text-sm font-semibold ${badgeClass}">${status}</span>`;
-
-          const viewLink = `<a href="/viewEnvelope.html?id=${envelopeId}" class="btn btn-sm btn-primary">View</a>`;
-          const auditlink = `<a href="/audit.html?id=${envelopeId}" class="btn btn-sm btn-secondary">Audit Logs</a>`;
-
-          const row = `
+          tbody.insertAdjacentHTML('beforeend', `
             <tr>
               <td>${subject}</td>
               <td>${statusBadge}</td>
@@ -118,21 +133,22 @@ const statusBadge = `<span class="px-2 py-1 rounded-full text-sm font-semibold $
               <td>${viewLink}</td>
               <td>${auditlink}</td>
             </tr>
-          `;
-          tbody.insertAdjacentHTML('beforeend', row);
+          `);
         });
 
         $('#envelopes').DataTable();
 
+        // CHART COLORS
+        const palette = ['#5cb85c', '#f0ad4e', '#d9534f', '#6e6e6e', '#f47c3c', '#1e4882', '#6d85a7'];
+
         // PIE CHART
-        const pieCtx = document.getElementById('statusPieChart').getContext('2d');
-        new Chart(pieCtx, {
+        new Chart(document.getElementById('statusPieChart'), {
           type: 'pie',
           data: {
             labels: Object.keys(statusCounts),
             datasets: [{
               data: Object.values(statusCounts),
-              backgroundColor: ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA', '#F472B6', '#38BDF8']
+              backgroundColor: palette
             }]
           },
           options: {
@@ -144,15 +160,14 @@ const statusBadge = `<span class="px-2 py-1 rounded-full text-sm font-semibold $
         });
 
         // BAR CHART
-        const barCtx = document.getElementById('statusBarChart').getContext('2d');
-        new Chart(barCtx, {
+        new Chart(document.getElementById('statusBarChart'), {
           type: 'bar',
           data: {
             labels: Object.keys(statusCounts),
             datasets: [{
               label: 'Envelope Count',
               data: Object.values(statusCounts),
-              backgroundColor: '#6366F1'
+              backgroundColor: palette
             }]
           },
           options: {
@@ -172,7 +187,7 @@ const statusBadge = `<span class="px-2 py-1 rounded-full text-sm font-semibold $
         const grid = document.getElementById('statusGrid');
         Object.entries(statusCounts).forEach(([status, count]) => {
           const card = document.createElement('div');
-          card.className = "bg-indigo-100 p-4 rounded-lg shadow text-indigo-700 font-semibold";
+          card.className = "bg-[#bdc3cd] p-4 rounded-lg shadow text-center text-[#1e4882] font-semibold";
           card.innerHTML = `<div class="text-sm">${status}</div><h1 class="text-2xl">${count}</h1>`;
           grid.appendChild(card);
         });
