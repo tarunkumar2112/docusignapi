@@ -244,7 +244,7 @@ table#envelopes {
       const grid = document.getElementById('statusGrid');
       Object.entries(statusCounts).forEach(([status, count]) => {
         const card = document.createElement('div');
-        card.className = "bg-[#bdc3cd] p-4 rounded-lg shadow text-center text-[#1e4882] font-semibold";
+        card.className = "bg-[#1e4882] p-4 rounded-lg shadow text-center text-white font-semibold";
         card.innerHTML = `<div class="text-sm">${status}</div><h1 class="text-2xl">${count}</h1>`;
         grid.appendChild(card);
       });
