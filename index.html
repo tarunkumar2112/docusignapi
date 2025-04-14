@@ -96,19 +96,28 @@
   </div>
 
   <script>
-    fetch('https://docusignapi.netlify.app/.netlify/functions/fetch')
-      .then(res => res.json())
-      .then(data => {
-        const tbody = document.querySelector('#envelopes tbody');
-        const statusCounts = {};
+fetch('https://docusignapi.netlify.app/.netlify/functions/fetch')
+  .then(res => res.json())
+  .then(data => {
+    const tbody = document.querySelector('#envelopes tbody');
+    const statusCounts = {};
+    const fetchPromises = [];
 
-        data.forEach(item => {
-          const subject = item.emailSubject || '—';
-          const status = item.status || '—';
-          const updated = item.statusChangedDateTime ? new Date(item.statusChangedDateTime).toLocaleString() : '—';
-          const envelopeId = item.envelopeId || '—';
-          const nextSigner = item.recipients?.signers?.find(s => s.status !== "completed")?.name || '—';
+    // Loop through each envelope data
+    data.forEach(item => {
+      const subject = item.emailSubject || '—';
+      const status = item.status || '—';
+      const updated = item.statusChangedDateTime ? new Date(item.statusChangedDateTime).toLocaleString() : '—';
+      const envelopeId = item.envelopeId || '—';
 
+      // Create a fetch promise for recipients data
+      const fetchRecipientData = fetch(`https://docusignapi.netlify.app/.netlify/functions/getRecipients?id=${envelopeId}`)
+        .then(res => res.json())
+        .then(recipientData => {
+          // Find the next signer
+          const nextSigner = recipientData.signers?.find(signer => signer.status !== "completed")?.name || '—';
+
+          // Update the status counts
           statusCounts[status] = (statusCounts[status] || 0) + 1;
 
           const badgeColors = {
@@ -122,8 +131,9 @@
           const badgeClass = badgeColors[status] || 'bg-gray-200 text-gray-700';
           const statusBadge = `<span class="px-2 py-1 rounded-full text-sm font-semibold ${badgeClass}">${status}</span>`;
           const viewLink = `<a href="/viewEnvelope.html?id=${envelopeId}" class="btn btn-sm bluebtn">View</a>`;
-          const auditlink = `<a href="/audit.html?id=${envelopeId}" class="btn btn-sm btn-orange">Audit Logs</a>`;
+          const auditLink = `<a href="/audit.html?id=${envelopeId}" class="btn btn-sm btn-orange">Audit Logs</a>`;
 
+          // Insert the row into the table
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
               <td>${subject}</td>
@@ -131,75 +141,105 @@
               <td>${updated}</td>
               <td>${nextSigner}</td>
               <td>${viewLink}</td>
-              <td>${auditlink}</td>
+              <td>${auditLink}</td>
+            </tr>
+          `);
+        })
+        .catch(err => {
+          console.error('Error fetching recipients data:', err);
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td colspan="6" class="text-center text-red-600">Error loading next signer data</td>
             </tr>
           `);
         });
 
-        $('#envelopes').DataTable();
+      // Add the promise to the fetchPromises array
+      fetchPromises.push(fetchRecipientData);
+    });
 
-        // CHART COLORS
-        const palette = ['#5cb85c', '#f0ad4e', '#d9534f', '#6e6e6e', '#f47c3c', '#1e4882', '#6d85a7'];
+    // Wait for all fetches to finish before proceeding
+    Promise.all(fetchPromises).then(() => {
+      // After all data is fetched, initialize the charts
+      initializeCharts(statusCounts);
 
-        // PIE CHART
-        new Chart(document.getElementById('statusPieChart'), {
-          type: 'pie',
-          data: {
-            labels: Object.keys(statusCounts),
-            datasets: [{
-              data: Object.values(statusCounts),
-              backgroundColor: palette
-            }]
-          },
-          options: {
-            plugins: {
-              legend: { position: 'bottom' },
-              title: { display: true, text: 'Envelope Status Distribution' }
-            }
-          }
-        });
+      // Initialize DataTable
+      $('#envelopes').DataTable();
 
-        // BAR CHART
-        new Chart(document.getElementById('statusBarChart'), {
-          type: 'bar',
-          data: {
-            labels: Object.keys(statusCounts),
-            datasets: [{
-              label: 'Envelope Count',
-              data: Object.values(statusCounts),
-              backgroundColor: palette
-            }]
-          },
-          options: {
-            plugins: {
-              title: { display: true, text: 'Envelope Count by Status' }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1 }
-              }
-            }
-          }
-        });
+      // STATUS GRID
+      updateStatusGrid(statusCounts);
 
-        // STATUS GRID
-        const grid = document.getElementById('statusGrid');
-        Object.entries(statusCounts).forEach(([status, count]) => {
-          const card = document.createElement('div');
-          card.className = "bg-[#bdc3cd] p-4 rounded-lg shadow text-center text-[#1e4882] font-semibold";
-          card.innerHTML = `<div class="text-sm">${status}</div><h1 class="text-2xl">${count}</h1>`;
-          grid.appendChild(card);
-        });
+      // Hide the skeleton loader and show the dashboard
+      document.getElementById('skeleton').style.display = 'none';
+      const dash = document.getElementById('dashboard');
+      dash.classList.remove('hidden');
+      dash.classList.add('animate-fade-in');
+    }).catch(err => {
+      document.body.innerHTML += `<p class="text-red-600 mt-4">Error loading all data: ${err.message}</p>`;
+    });
+  })
+  .catch(err => {
+    document.body.innerHTML += `<p class="text-red-600 mt-4">Error loading data: ${err.message}</p>`;
+  });
 
-        document.getElementById('skeleton').style.display = 'none';
-        const dash = document.getElementById('dashboard');
-        dash.classList.remove('hidden');
-        dash.classList.add('animate-fade-in');
-      })
-      .catch(err => {
-        document.body.innerHTML += `<p class="text-red-600 mt-4">Error loading data: ${err.message}</p>`;
-      });
+// Function to initialize charts
+function initializeCharts(statusCounts) {
+  const palette = ['#5cb85c', '#f0ad4e', '#d9534f', '#6e6e6e', '#f47c3c', '#1e4882', '#6d85a7'];
+
+  // PIE CHART
+  new Chart(document.getElementById('statusPieChart'), {
+    type: 'pie',
+    data: {
+      labels: Object.keys(statusCounts),
+      datasets: [{
+        data: Object.values(statusCounts),
+        backgroundColor: palette
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom' },
+        title: { display: true, text: 'Envelope Status Distribution' }
+      }
+    }
+  });
+
+  // BAR CHART
+  new Chart(document.getElementById('statusBarChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(statusCounts),
+      datasets: [{
+        label: 'Envelope Count',
+        data: Object.values(statusCounts),
+        backgroundColor: palette
+      }]
+    },
+    options: {
+      plugins: {
+        title: { display: true, text: 'Envelope Count by Status' }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+}
+
+// Function to update status grid
+function updateStatusGrid(statusCounts) {
+  const grid = document.getElementById('statusGrid');
+  Object.entries(statusCounts).forEach(([status, count]) => {
+    const card = document.createElement('div');
+    card.className = "bg-[#bdc3cd] p-4 rounded-lg shadow text-center text-[#1e4882] font-semibold";
+    card.innerHTML = `<div class="text-sm">${status}</div><h1 class="text-2xl">${count}</h1>`;
+    grid.appendChild(card);
+  });
+}
+
   </script>
 
   <style>
