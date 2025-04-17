@@ -148,6 +148,8 @@ color: #fff !important;
         const fetchPromises = [];
 
         data.forEach(item => {
+        const usernameofsender = item.sender.username || '-';
+        console.log(usernameofsender);
           const subject = item.emailSubject || '—';
           const status = item.status || '—';
           const updated = item.statusChangedDateTime ? new Date(item.statusChangedDateTime).toLocaleString() : '—';
